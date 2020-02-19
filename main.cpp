@@ -8,76 +8,70 @@ using namespace std;
 class Perceptron
 {
 public :
-    class Akson
-    {
-    private:
-        Perceptron *p;
-    public:
-        Akson(){}
-        Akson(const Perceptron * const &p)
-        {
-            this->p = const_cast<Perceptron*>(p);
-        }
-        double value = -1;
-        double Value()
-        {
-            if (value == -1 && p != nullptr)
-            {
-                value = p->activate();
-            } else return value;
-        }
-    };
     class Dendrit
     {
     public:
-        Akson *inputAkson;
+        Perceptron *input_perceptron;
         double weight;
     };
 
-    Akson akson = Akson(this);
+    double value;
     vector<Dendrit*> dendrites;
 
-    Dendrit *createDendrit(const Perceptron * const &inputPerceptron)
+    Dendrit *createDendrit(const Perceptron * const &input_perceptron)
     {
         Dendrit *d = new Dendrit;
-        d->inputAkson = const_cast<Akson*>(&inputPerceptron->akson);
-        d->weight = 0;
-        dendrites.push_back(d);
-        return d;
-    }
-    Dendrit *createDendrit(const Akson * const &inputAkson)
-    {
-        Dendrit *d = new Dendrit;
-        d->inputAkson = const_cast<Akson*>(inputAkson);
+        d->input_perceptron = const_cast<Perceptron*>(input_perceptron);
         d->weight = 0;
         dendrites.push_back(d);
         return d;
     }
 
-    double activate()
+    double activate(bool recursive = false)
     {
+        if (dendrites.size() == 0)
+        {
+            return value;
+        }
+
         double sum = 0;
         for (Dendrit *d : dendrites)
         {
-            sum += d->inputAkson->Value() * d->weight;
+            if (recursive)
+            {
+                sum += d->input_perceptron->activate(true) * d->weight;
+            } else
+            {
+                sum += d->input_perceptron->value * d->weight;
+            }
         }
-        akson.value = sigmoid(sum);
-        return akson.value;
+        value = relu(sum);
+        return value;
     }
+
 
     double sigmoid(double x)
     {
         return 1 / (1 + pow(M_E, -x));
+    }
+    double linear(double x)
+    {
+        if (x > 1) return 1;
+        else return x;
+    }
+    double relu(double x)
+    {
+        if (x < 0) return 0;
+        else return x;
     }
 };
 
 int main()
 {
     srand(time(nullptr));
-    int neuralNetworkConfig[] {10, 5, 3, 5};
+    int neuralNetworkConfig[] {3, 5, 5, 3};
 
     vector <vector <Perceptron*>> neuralNetwork;
-    vector <Perceptron::Akson*> input;
 
     for (int i = 0; i < sizeof(neuralNetworkConfig)/4; i++)
     {
@@ -93,17 +87,17 @@ int main()
                     Perceptron::Dendrit *d = p->createDendrit(neuralNetwork[i-1][k]);
                     d->weight = (rand() % 100) / 100.;
                 }
-            } else
-            {
-                Perceptron::Akson *a = new Perceptron::Akson;
-                input.push_back(a);
-                Perceptron::Dendrit *d = p->createDendrit(a);
-                d->weight = 1;
             }
         }
     }
-    input[0]->value = 3;
 
-    double res = neuralNetwork[3][0]->activate();
+    neuralNetwork[0][0]->value = 0.4;
+    neuralNetwork[0][1]->value = 0.7;
+    neuralNetwork[0][2]->value = 0.1;
+
+    cout<<neuralNetwork[3][0]->activate(true)<<endl;
+    cout<<neuralNetwork[3][1]->activate(true)<<endl;
+    cout<<neuralNetwork[3][2]->activate(true)<<endl;
+
     return 0;
 }
